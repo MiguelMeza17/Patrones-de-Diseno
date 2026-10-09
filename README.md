@@ -5,13 +5,14 @@
 **Programa de Ingeniería de Sistemas**  
 **Laboratorio de Ingeniería de Software II**  
 **Taller 4: Patrón Capas y Micro patrón MVC + Observer**  
+**Continúa en el Taller 08: Patrones de Diseño (Creacionales, Estructurales y de Comportamiento)**  
 **Periodo 2-2026**
 
 ---
 
 ## 👥 Integrantes
-Integrante 1: Duvan Alexis Hoyos.
-Integrante 2: Juan José Hurtado.
+Integrante 1: Miguel Meza.
+Integrante 2: Alejandro Menza.
 
 ---
 
@@ -80,8 +81,8 @@ Durante el registro de un usuario, se solicitan los siguientes datos:
 
 ### 1. Clonar el repositorio
 ```bash
-git clone https://github.com/DuvanDT/LISWII_T04_G06
-cd LISWII_T4_G06
+git clone https://github.com/MiguelMeza17/Patrones-de-Diseno
+cd Patrones-de-Diseno
 ```
 
 ### 2. Compilar el proyecto
