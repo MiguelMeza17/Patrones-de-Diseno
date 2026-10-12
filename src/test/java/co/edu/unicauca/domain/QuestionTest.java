@@ -1,5 +1,7 @@
 package co.edu.unicauca.domain;
 
+import co.edu.unicauca.patterns.state.DeletedState;
+import co.edu.unicauca.patterns.state.PendingReviewState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -46,13 +48,27 @@ class QuestionTest {
     }
 
     @Test
-    @DisplayName("Debe permitir cambiar el estado de la pregunta")
+    @DisplayName("Debe cambiar de estado mediante transiciones del patrón State")
     void testSetEstado() {
-        question.setEstado(Question.STATE_PENDIENTE_REVISION);
+        question.submitForReview();
         assertEquals(Question.STATE_PENDIENTE_REVISION, question.getEstado());
+        assertSame(PendingReviewState.INSTANCE, question.getState());
 
-        question.setEstado(Question.STATE_ELIMINADA);
+        question.delete();
         assertEquals(Question.STATE_ELIMINADA, question.getEstado());
+        assertSame(DeletedState.INSTANCE, question.getState());
+    }
+
+    @Test
+    @DisplayName("setEstado debe reconstruir el estado desde su nombre persistido")
+    void testSetEstadoFromPersistedName() {
+        question.setEstado(Question.STATE_PENDIENTE_REVISION);
+        assertSame(PendingReviewState.INSTANCE, question.getState());
+
+        question.setEstado(null);
+        assertEquals(Question.STATE_BORRADOR, question.getEstado());
+
+        assertThrows(IllegalArgumentException.class, () -> question.setEstado("Aprobada"));
     }
 
     @Test

@@ -241,7 +241,13 @@ public class GUIQuestions extends JFrame {
 
         String nuevoEstado = (String) cbNuevoEstado.getSelectedItem();
         if (nuevoEstado != null) {
-            boolean exito = questionService.updateQuestionState(currentQuestion.getId(), nuevoEstado);
+            boolean exito;
+            try {
+                exito = questionService.updateQuestionState(currentQuestion.getId(), nuevoEstado);
+            } catch (IllegalArgumentException | IllegalStateException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Transición no permitida", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
             if (exito) {
                 lblEstadoActualValue.setText(nuevoEstado);
                 lblEstadoActualValue.setForeground(QuestionStateColors.colorFor(nuevoEstado));

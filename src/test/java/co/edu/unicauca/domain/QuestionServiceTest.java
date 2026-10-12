@@ -50,6 +50,18 @@ class QuestionServiceTest {
     }
 
     @Test
+    @DisplayName("Debe rechazar una transición de estado no permitida sin modificar la pregunta")
+    void testUpdateQuestionStateInvalidTransition() {
+        // P-005 está Eliminada: solo puede restaurarse a Borrador
+        assertThrows(IllegalStateException.class,
+                () -> service.updateQuestionState("P-005", Question.STATE_PENDIENTE_REVISION));
+        assertEquals(Question.STATE_ELIMINADA, service.getQuestionById("P-005").getEstado());
+
+        assertTrue(service.updateQuestionState("P-005", Question.STATE_BORRADOR));
+        assertEquals(Question.STATE_BORRADOR, service.getQuestionById("P-005").getEstado());
+    }
+
+    @Test
     @DisplayName("Debe retornar false al intentar actualizar una pregunta inexistente")
     void testUpdateNonExistingQuestionState() {
         boolean result = service.updateQuestionState("P-999", Question.STATE_ELIMINADA);
