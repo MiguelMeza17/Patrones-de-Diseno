@@ -1,6 +1,8 @@
 package co.edu.unicauca.domain;
 
 import co.edu.unicauca.infra.Subject;
+import co.edu.unicauca.patterns.state.QuestionState;
+import co.edu.unicauca.patterns.state.QuestionStates;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -39,9 +41,23 @@ public class QuestionService extends Subject {
 
     /**
      * Actualiza el estado de una pregunta y notifica a todos los observadores registrados.
+     * La transición la valida el estado actual de la pregunta (patrón State).
+     *
+     * @return false si la pregunta no existe o no se pudo persistir el cambio
+     * @throws IllegalArgumentException si el estado destino no existe
+     * @throws IllegalStateException    si la transición no está permitida
      */
     public boolean updateQuestionState(String id, String newState) {
-        boolean updated = repository.updateState(id, newState);
+        Question question = repository.findById(id);
+        if (question == null) {
+            return false;
+        }
+        question.changeState(newState);
+        return persistState(question);
+    }
+
+    private boolean persistState(Question question) {
+        boolean updated = repository.updateState(question.getId(), question.getEstado());
         if (updated) {
             notifyAllObservers();
         }
@@ -70,9 +86,6 @@ public class QuestionService extends Subject {
         if (!errors.isEmpty()) {
             throw new IllegalArgumentException(String.join("\n", errors));
         }
-        if (question.getEstado() == null || question.getEstado().isBlank()) {
-            question.setEstado(Question.STATE_BORRADOR);
-        }
         return saveQuestion(question);
     }
 
@@ -88,10 +101,8 @@ public class QuestionService extends Subject {
         if (autorLogin == null || !autorLogin.equals(question.getAutorLogin())) {
             throw new IllegalStateException("Solo el autor de la pregunta puede enviarla a revisión.");
         }
-        if (!Question.STATE_BORRADOR.equals(question.getEstado())) {
-            throw new IllegalStateException("Solo se puede enviar a revisión una pregunta en estado Borrador.");
-        }
-        return updateQuestionState(questionId, Question.STATE_PENDIENTE_REVISION);
+        question.submitForReview();
+        return persistState(question);
     }
 
     /**
@@ -164,7 +175,7 @@ public class QuestionService extends Subject {
         if (question == null) {
             throw new IllegalArgumentException("La pregunta no existe.");
         }
-        if (!Question.STATE_PENDIENTE_REVISION.equals(question.getEstado())) {
+        if (!question.getState().canAssignReviewers()) {
             throw new IllegalStateException("Solo se pueden asignar revisores a preguntas en estado Pendiente de revisión.");
         }
         if (reviewers == null || reviewers.isEmpty()) {
@@ -202,9 +213,9 @@ public class QuestionService extends Subject {
      */
     public Map<String, Integer> getQuestionCountByState() {
         Map<String, Integer> counts = new LinkedHashMap<>();
-        counts.put(Question.STATE_BORRADOR, 0);
-        counts.put(Question.STATE_PENDIENTE_REVISION, 0);
-        counts.put(Question.STATE_ELIMINADA, 0);
+        for (QuestionState state : QuestionStates.all()) {
+            counts.put(state.getName(), 0);
+        }
 
         List<Question> questions = repository.findAll();
         for (Question q : questions) {

@@ -1,12 +1,22 @@
 package co.edu.unicauca.domain;
 
+import co.edu.unicauca.patterns.state.DeletedState;
+import co.edu.unicauca.patterns.state.DraftState;
+import co.edu.unicauca.patterns.state.PendingReviewState;
+import co.edu.unicauca.patterns.state.QuestionState;
+import co.edu.unicauca.patterns.state.QuestionStates;
+
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Pregunta del banco. Es el contexto del patrón State: su ciclo de vida
+ * se delega en un {@link QuestionState}.
+ */
 public class Question {
-    public static final String STATE_BORRADOR = "Borrador";
-    public static final String STATE_PENDIENTE_REVISION = "Pendiente de revisión";
-    public static final String STATE_ELIMINADA = "Eliminada";
+    public static final String STATE_BORRADOR = DraftState.NAME;
+    public static final String STATE_PENDIENTE_REVISION = PendingReviewState.NAME;
+    public static final String STATE_ELIMINADA = DeletedState.NAME;
 
     private String id;
     private String nombre;
@@ -20,7 +30,7 @@ public class Question {
     private String tema;
     private String subtema;
     private String dificultad;
-    private String estado;
+    private QuestionState state = DraftState.INSTANCE;
     private String autorLogin;
     private List<String> revisoresAsignados = new ArrayList<>();
 
@@ -33,7 +43,7 @@ public class Question {
         this.pregunta = pregunta;
         this.distractors = distractors;
         this.respuestaCorrecta = respuestaCorrecta;
-        this.estado = estado;
+        setEstado(estado);
     }
 
     public String getId() {
@@ -133,11 +143,53 @@ public class Question {
     }
 
     public String getEstado() {
-        return estado;
+        return state.getName();
     }
 
+    /**
+     * Fija el estado a partir de su nombre, sin validar la transición.
+     * Pensado para reconstruir preguntas desde la persistencia; para cambiar
+     * de estado en el flujo de negocio use las operaciones de transición.
+     *
+     * @param estado nombre del estado; si es nulo o vacío queda en Borrador
+     * @throws IllegalArgumentException si el nombre no corresponde a ningún estado
+     */
     public void setEstado(String estado) {
-        this.estado = estado;
+        this.state = estado == null || estado.isBlank() ? DraftState.INSTANCE : QuestionStates.fromName(estado);
+    }
+
+    public QuestionState getState() {
+        return state;
+    }
+
+    /** Borrador → Pendiente de revisión. */
+    public void submitForReview() {
+        state = state.submitForReview();
+    }
+
+    /** Pendiente de revisión → Borrador. */
+    public void returnToDraft() {
+        state = state.returnToDraft();
+    }
+
+    /** Borrador o Pendiente de revisión → Eliminada. */
+    public void delete() {
+        state = state.delete();
+    }
+
+    /** Eliminada → Borrador. */
+    public void restore() {
+        state = state.restore();
+    }
+
+    /**
+     * Aplica la transición necesaria para llegar al estado indicado.
+     *
+     * @throws IllegalArgumentException si el estado destino no existe
+     * @throws IllegalStateException    si la transición no está permitida desde el estado actual
+     */
+    public void changeState(String targetEstado) {
+        state = QuestionStates.transition(state, targetEstado);
     }
 
     public String getAutorLogin() {
@@ -225,7 +277,7 @@ public class Question {
         }
 
         public Builder estado(String estado) {
-            question.estado = estado;
+            question.setEstado(estado);
             return this;
         }
 
@@ -235,9 +287,6 @@ public class Question {
         }
 
         public Question build() {
-            if (question.estado == null) {
-                question.estado = Question.STATE_BORRADOR;
-            }
             return question;
         }
     }
