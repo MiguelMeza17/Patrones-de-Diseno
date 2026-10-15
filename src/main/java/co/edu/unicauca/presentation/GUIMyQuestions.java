@@ -3,6 +3,7 @@ package co.edu.unicauca.presentation;
 import co.edu.unicauca.domain.Question;
 import co.edu.unicauca.domain.QuestionService;
 import co.edu.unicauca.domain.User;
+import co.edu.unicauca.patterns.state.QuestionStates;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -157,7 +158,7 @@ public class GUIMyQuestions extends JFrame {
             return;
         }
         String estado = (String) tableModel.getValueAt(row, 5);
-        btnEnviarRevision.setEnabled(Question.STATE_BORRADOR.equals(estado));
+        btnEnviarRevision.setEnabled(QuestionStates.fromName(estado).canSubmitForReview());
     }
 
     private void enviarARevision() {
